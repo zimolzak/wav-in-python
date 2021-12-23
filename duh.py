@@ -58,4 +58,14 @@ def bytes2intlist(blist):
             yield(256 * blist[n-1] + blist[n])
 
 intlist = list(bytes2intlist(two_symbols))
-print(intlist)
+#print(intlist)
+
+def ints2dots(L):
+    max_int = 256 * 255 + 255 # 65535
+    max_spaces = 75
+    for x in L:
+        n_spaces = int(x / max_int * max_spaces)
+        yield ('.' * n_spaces + 'X')
+
+dotlist = list(ints2dots(intlist))
+print('\n'.join(dotlist))
