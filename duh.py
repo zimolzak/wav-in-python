@@ -49,23 +49,17 @@ def pretty_hstring(hs):  # fixme params for 2 and 16 magic nums
 plist = list(pretty_hstring(hstring))
 
 
-# print(''.join(plist))
-
-# >>> list(b'ABC')
-# [65, 66, 67]
-
 def bytes2intlist(blist):
     for n, b in enumerate(blist):
         if n % 2 == 0:
             continue
         else:
             yield (256 * blist[n - 1] + blist[n])
+            # indexing or list() on a 'bytes' obj auto-converts to 'int'
 
 
 intlist = list(bytes2intlist(two_symbols))
 
-
-# print(intlist)
 
 def ints2dots(L):
     max_int = 256 * 255 + 255  # 65535
@@ -76,4 +70,10 @@ def ints2dots(L):
 
 
 dotlist = list(ints2dots(intlist))
-print('\n'.join(dotlist))
+
+
+n_bytes = 16
+
+print(''.join(plist[:n_bytes * 2]))
+print(intlist[:n_bytes // 2])
+print('\n'.join(dotlist[:n_bytes // 2]))
