@@ -27,8 +27,9 @@ print()
 
 hstring = two_symbols.hex()
 
-def pretty_hstring(hs):
-    bytes_space = 2
+def pretty_hstring(hs):  # fixme params for 2 and 16 magic nums
+    """Input a string and add spaces and newlines every so often."""
+    bytes_space = 2  # fixme make a function arg
     bytes_newline = 16
     cs = bytes_space * 2 # chars per space
     cn = bytes_newline * 2 # chars per newline
@@ -44,4 +45,17 @@ def pretty_hstring(hs):
             yield c
 
 plist = list(pretty_hstring(hstring))
-print(''.join(plist))
+# print(''.join(plist))
+
+# >>> list(b'ABC')
+# [65, 66, 67]
+
+def bytes2intlist(blist):
+    for n, b in enumerate(blist):
+        if n % 2 == 0:
+            continue
+        else:
+            yield(256 * blist[n-1] + blist[n])
+
+intlist = list(bytes2intlist(two_symbols))
+print(intlist)
