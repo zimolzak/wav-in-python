@@ -2,8 +2,8 @@ def pretty_hex_string(hs):  # fixme params for 2 and 16 magic nums
     """Input a string. Yield a stream of chars with spaces and newlines added every so often."""
     bytes_space = 2  # fixme make a function arg
     bytes_newline = 16
-    cs = bytes_space * 2  # chars per space
-    cn = bytes_newline * 2  # chars per newline
+    cs = bytes_space * 2  # chars per space (4)
+    cn = bytes_newline * 2  # chars per newline (32)
     for n, c in enumerate(hs):
         # every 16 bytes add a newline
         # fixme insert code here
