@@ -1,12 +1,11 @@
-def pretty_hex_string(hs):  # fixme params for 2 and 16 magic nums
+def pretty_hex_string(hs):
     """Input a string. Yield a stream of chars with spaces and newlines added every so often."""
-    bytes_space = 2  # fixme make a function arg
+    bytes_space = 2  # fixme make these into function args
     bytes_newline = 16
     cs = bytes_space * 2  # chars per space (4)
     cn = bytes_newline * 2  # chars per newline (32)
     for n, c in enumerate(hs):
         # every 16 bytes add a newline
-        # fixme insert code here
         if n % cn == cn - 1:
             yield c + "\n"
         elif n % cs == cs - 1:
@@ -22,10 +21,10 @@ def bytes2int_list(byte_list):
         if n % 2 == 0:
             continue
         else:
-            # yield 256 * byte_list[n - 1] + byte_list[n]  # fixme endian?
+            # yield 256 * byte_list[n - 1] + byte_list[n]  # the other endian
             raw_int = 256 * byte_list[n] + byte_list[n - 1]
             midpoint = 2 ** 15
-            if raw_int > midpoint:
+            if raw_int >= midpoint:
                 scaled_int = raw_int - midpoint
             else:
                 scaled_int = raw_int + midpoint
