@@ -23,7 +23,13 @@ def bytes2int_list(byte_list):
             continue
         else:
             # yield 256 * byte_list[n - 1] + byte_list[n]  # fixme endian?
-            yield 256 * byte_list[n] + byte_list[n - 1]
+            raw_int = 256 * byte_list[n] + byte_list[n - 1]
+            midpoint = 2 ** 15
+            if raw_int > midpoint:
+                scaled_int = raw_int - midpoint
+            else:
+                scaled_int = raw_int + midpoint
+            yield scaled_int
             # indexing or list() on a 'bytes' obj auto-converts to 'int'
 
 
