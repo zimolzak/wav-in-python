@@ -2,6 +2,8 @@ import sys
 import wave
 from wave_helpers import pretty_hex_string, bytes2int_list, ints2dots
 from scipy import signal
+import matplotlib.pyplot as plt
+import numpy as np
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 
@@ -47,5 +49,22 @@ print()
 print('\n'.join(dot_list[:n_bytes_to_plot // bytes_per_sample]))  # dot list
 
 f, t, Zxx = signal.stft(int_list, fs=sample_rate)
-print(f)
-print(t)
+
+f_above = (f > 400)
+f_filt = f[f_above]
+print(f_above)
+print(f_filt)
+# Zxx first axis is freq, second is times
+print(Zxx.shape)
+Zxx_filt = np.abs(Zxx[f_above], )
+zmax = np.max(Zxx_filt)
+
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
+plt.pcolormesh(t, f_filt, Zxx_filt, vmin=0, vmax=zmax, shading='gouraud')
+plt.title('STFT Magnitude')
+plt.ylabel('Frequency [Hz]')
+plt.xlabel('Time [sec]')
+print(plt)
+plt.savefig('stft.png')
+#  plt.show()
+# shift of 850 Hz. Mine by inspection is about 581 Hz and 1431 Hz
