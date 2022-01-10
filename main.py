@@ -10,7 +10,7 @@ wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 # Free parameters
 start_sample = 3080  # start of good mark/space in sample-data.wav
 baud = 50  # symbol / sec
-n_symbols_to_read = 2
+n_symbols_to_read = 20
 
 # Calculated and derived vars
 sample_rate = wav_file.getframerate()
@@ -30,7 +30,7 @@ dot_list = list(ints2dots(int_list))
 # Do the printing
 n_frames_to_plot = 15
 n_bytes_to_plot = n_frames_to_plot * bytes_per_sample
-char_per_byte = 2  # A byte is two hex digits '01' or '0F' etc.
+char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
 
 print("Params:\n", wav_file.getparams())
 print()
@@ -68,7 +68,6 @@ plt.pcolormesh(t, f_filtered, Zxx_filtered, vmin=0, vmax=z_max, shading='gouraud
 plt.title('STFT Magnitude')
 plt.ylabel('Frequency [Hz]')
 plt.xlabel('Time [sec]')
-print(plt)
 plt.savefig('stft.png')
 #  plt.show()
 # shift of 850 Hz. Mine by inspection is about 581 Hz and 1431 Hz
