@@ -48,19 +48,23 @@ print(int_list[:n_bytes_to_plot // bytes_per_sample])  # int list
 print()
 print('\n'.join(dot_list[:n_bytes_to_plot // bytes_per_sample]))  # dot list
 
+
+
+
+# Short time Fourier transform
+
 f, t, Zxx = signal.stft(int_list, fs=sample_rate)
 
-f_above = (f > 400)
-f_filt = f[f_above]
-print(f_above)
-print(f_filt)
+selected_indices = ((400 < f) * (f < 2000))
+f_filtered = f[selected_indices]
+print("Frequencies selected:", f_filtered)
 # Zxx first axis is freq, second is times
-print(Zxx.shape)
-Zxx_filt = np.abs(Zxx[f_above], )
-zmax = np.max(Zxx_filt)
+print("Zxx shape:", Zxx.shape)
+Zxx_filtered = np.abs(Zxx[selected_indices], )
+z_max = np.max(Zxx_filtered)
 
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
-plt.pcolormesh(t, f_filt, Zxx_filt, vmin=0, vmax=zmax, shading='gouraud')
+plt.pcolormesh(t, f_filtered, Zxx_filtered, vmin=0, vmax=z_max, shading='gouraud')
 plt.title('STFT Magnitude')
 plt.ylabel('Frequency [Hz]')
 plt.xlabel('Time [sec]')
