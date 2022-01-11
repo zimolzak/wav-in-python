@@ -37,7 +37,7 @@ print_wav_file_basics(wav_file)
 
 print("\n\n# Fourier decoding of FSK\n")
 
-f, t, Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(samples_per_symbol / seg_per_symbol))
+f, t, Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(samples_per_symbol / seg_per_symbol))  # important
 # Zxx first axis is freq, second is times
 # fixme - it is possible I don't understand the "nperseg" parameter.
 print("Zxx (FFT result) shape, frequencies X time points:", Zxx.shape)
@@ -46,7 +46,7 @@ selected_indices = ((400 < f) * (f < 2000))
 f_filtered = f[selected_indices]
 print("FFT frequencies in pass band:", f_filtered)
 
-Zxx_filtered = np.abs(Zxx[selected_indices], )
+Zxx_filtered = np.abs(Zxx[selected_indices])
 z_max = np.max(Zxx_filtered)  # global max just used for plot scale
 max_freq_indices = Zxx_filtered.argmax(0)
 
