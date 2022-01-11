@@ -19,6 +19,10 @@ def bytes2int_list(byte_list):
             # indexing or list() on a 'bytes' obj auto-converts to 'int'
 
 
+def file_to_int_list(wav_file, start_sample, n_symbols_to_read, baud):
+    pass
+
+
 def freqs2bits(freq_list, elements_per_symbol=3):
     """Take np.array and output bitstream.
     Often input is like this:

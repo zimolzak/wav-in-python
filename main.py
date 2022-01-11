@@ -2,7 +2,7 @@ import sys
 import wave
 from scipy import signal
 import numpy as np
-from wave_helpers import bytes2int_list, freqs2bits
+from wave_helpers import bytes2int_list, freqs2bits, file_to_int_list
 from printing import print_wav_file_basics, try_bitstream_shapes, plot_fourier_data
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
@@ -25,13 +25,14 @@ wav_file.setpos(start_sample)
 wav_data = wav_file.readframes(n_samples_to_read)
 n_samples_actually_read = len(wav_data) / bytes_per_sample
 n_symbols_actually_read = n_samples_actually_read / sample_rate * baud
-
-# Make 1 object for later
 int_list = list(bytes2int_list(wav_data))
+
+# int_list, n_samples_actually_read = file_to_int_list(wav_file, start_sample=1, n_symbols_to_read=750, baud=50)
+
 
 # Short time Fourier transform
 
-f, t, Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(samples_per_symbol / seg_per_symbol))  # important
+f, t, Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(samples_per_symbol / seg_per_symbol))  # important (baud, sample rate, seg per symbol, int list, pass, pass)
 # Zxx first axis is freq, second is times
 # fixme - it is possible I don't understand the "nperseg" parameter.
 selected_indices = ((400 < f) * (f < 2000))

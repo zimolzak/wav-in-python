@@ -78,6 +78,7 @@ def try_bitstream_shapes(bitstream, min_columns, max_columns):
         n_padding = cols - (n % cols)
         padding = [0] * n_padding
         bitstream_padded = np.append(bitstream, padding)
+        # fixme - maybe do without "import numpy" if we do bitstream.append not np.append
         rows = len(bitstream_padded) // cols
         print(np.reshape(bitstream_padded, (rows, cols)))
         print()
