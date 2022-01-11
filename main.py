@@ -4,7 +4,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
 from wave_helpers import bytes2int_list, freqs2bits
-from printing import pretty_hex_string, ints2dots
+from printing import print_wav_file_basics, try_bitstream_shapes
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 
@@ -26,31 +26,12 @@ wav_data = wav_file.readframes(n_samples_to_read)
 n_samples_actually_read = len(wav_data) / bytes_per_sample
 n_symbols_actually_read = n_samples_actually_read / sample_rate * baud
 
-# Make 3 objects for printing
-pretty_hex_list = list(pretty_hex_string(wav_data.hex()))
+# Make 1 object for later
 int_list = list(bytes2int_list(wav_data))
-dot_list = list(ints2dots(int_list))
 
 # Do the printing
-n_frames_to_plot = 15
-n_bytes_to_plot = n_frames_to_plot * bytes_per_sample
-char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
+print_wav_file_basics(wav_file)
 
-print("Params:\n", wav_file.getparams())
-print()
-print("File duration (s) =", wav_file.getnframes() / sample_rate)
-print("Samples / FSK symbol =", samples_per_symbol)
-print("Bytes in %f FSK symbols =" % n_symbols_actually_read, len(wav_data))
-print("Seconds read =", n_samples_actually_read / sample_rate)
-print()
-print("First %i bytes (%i samples):" % (n_bytes_to_plot, n_frames_to_plot))
-print(wav_data[:n_bytes_to_plot])
-print()
-print(''.join(pretty_hex_list[:n_bytes_to_plot * char_per_byte]))  # pretty hex list
-print()
-print(int_list[:n_bytes_to_plot // bytes_per_sample])  # int list
-print()
-print('\n'.join(dot_list[:n_bytes_to_plot // bytes_per_sample]))  # dot list
 
 # Short time Fourier transform
 
@@ -94,17 +75,4 @@ print("Inferred %i is high and %i is low (+/- 1)." % (hi, lo))
 print(bitstream)
 print()
 
-for cols in range(5, 12):
-    # 5N1 = 7
-    # 8N1 = 10
-    if cols == 7:
-        print("5N1")
-    if cols == 10:
-        print("8N1")
-    N = len(bitstream)
-    n_padding = cols - (N % cols)
-    padding = [0] * n_padding
-    bitstream_padded = np.append(bitstream, padding)
-    rows = len(bitstream_padded) // cols
-    print(np.reshape(bitstream_padded, (rows, cols)))
-    print()
+try_bitstream_shapes(bitstream, 5, 12)
