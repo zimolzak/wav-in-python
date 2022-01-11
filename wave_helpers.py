@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def pretty_hex_string(hs):
     """Input a string. Yield a stream of chars with spaces and newlines added every so often."""
     bytes_space = 2  # fixme make these into function args
@@ -39,3 +42,49 @@ def ints2dots(ints):
     for x in ints:
         n_spaces = int(x / max_int * max_spaces)
         yield '.' * n_spaces + 'X'
+
+
+def freqs2bits(freq_list, elements_per_symbol=3):
+    """Take np.array and output bitstream (RLE).
+    Often like this:
+    array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
+    """
+    h = np.histogram(freq_list, bins=np.arange(15))  # Integer bins. Can ignore h[1].
+    least_to_most = h[0].argsort()
+    common_val_1 = least_to_most[-1]
+    common_val_2 = least_to_most[-2]
+    low = min(common_val_1, common_val_2)
+    high = max(common_val_1, common_val_2)
+    assert (high - low) > 1
+    rl, values = rle(square_up(freq_list, high, low))
+    npi = np.vectorize(int)
+    rounded = npi(np.around(rl / elements_per_symbol))
+    return run_length_to_bitstream(rounded, values, high, low)
+
+
+def run_length_to_bitstream(rl, values, v_high, v_low):
+    high_shifts = np.where(values == v_high, 1 - v_high, 0)
+    low_shifts = np.where(values == v_low, 0 - v_low, 0)
+    values_edited = values + high_shifts + low_shifts
+    return np.repeat(values_edited, rl)
+
+
+def square_up(a, v_high, v_low):
+    is_high = abs(a - v_high) <= 1
+    is_low = abs(a - v_low) <= 1
+    fixed1 = np.where(is_high, v_high, a)
+    return np.where(is_low, v_low, fixed1)
+
+
+def rle(a):
+    # https://newbedev.com/find-length-of-sequences-of-identical-values-in-a-numpy-array-run-length-encoding
+    ia = np.asarray(a)
+    n = len(ia)
+    if n == 0:
+        return None, None
+    else:
+        there_is_transition = ia[1:] != ia[:-1]  # pairwise unequal (string safe)
+        transition_locations = np.append(np.where(there_is_transition), n - 1)  # must include last element pos
+        run_lengths = np.diff(np.append(-1, transition_locations))
+        # p = np.cumsum(np.append(0, run_lengths))[:-1]  # positions
+        return run_lengths, ia[transition_locations]
