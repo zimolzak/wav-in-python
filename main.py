@@ -1,12 +1,12 @@
 import sys
 import wave
 from scipy import signal
-import matplotlib.pyplot as plt
 import numpy as np
 from wave_helpers import bytes2int_list, freqs2bits
-from printing import print_wav_file_basics, try_bitstream_shapes
+from printing import print_wav_file_basics, try_bitstream_shapes, plot_fourier_data
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
+print_wav_file_basics(wav_file)
 
 # Free parameters
 start_sample = 1  # 3080 is start of good mark/space in sample-data.wav
@@ -29,34 +29,22 @@ n_symbols_actually_read = n_samples_actually_read / sample_rate * baud
 # Make 1 object for later
 int_list = list(bytes2int_list(wav_data))
 
-# Do the printing
-print_wav_file_basics(wav_file)
-
-
 # Short time Fourier transform
-
-print("\n\n# Fourier decoding of FSK\n")
 
 f, t, Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(samples_per_symbol / seg_per_symbol))  # important
 # Zxx first axis is freq, second is times
 # fixme - it is possible I don't understand the "nperseg" parameter.
-print("Zxx (FFT result) shape, frequencies X time points:", Zxx.shape)
-
 selected_indices = ((400 < f) * (f < 2000))
 f_filtered = f[selected_indices]
-print("FFT frequencies in pass band:", f_filtered)
-
 Zxx_filtered = np.abs(Zxx[selected_indices])
-z_max = np.max(Zxx_filtered)  # global max just used for plot scale
-max_freq_indices = Zxx_filtered.argmax(0)
 
-# https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
-plt.pcolormesh(t, f_filtered, Zxx_filtered, vmin=0, vmax=z_max, shading='gouraud')
-plt.title('STFT Magnitude')
-plt.ylabel('Frequency [Hz]')
-plt.xlabel('Time [sec]')
-plt.savefig('stft.png')
-#  plt.show()
+
+max_freq_indices = Zxx_filtered.argmax(0)  # list of which freq band is most intense, per time
+
+print("\n\n# Fourier decoding of FSK\n")
+print("Zxx (FFT result) shape, frequencies X time points:", Zxx.shape)
+print("FFT frequencies in pass band:", f_filtered)
+plot_fourier_data(f_filtered, t, Zxx_filtered, 'stft.png')
 # shift of 850 Hz. Mine by inspection is about 581 Hz and 1431 Hz
 # one symbol is about 450 - 470 samples by inspection
 # calculated at 441 samples/symbol
@@ -70,7 +58,7 @@ print("\nBitstream:")
 calculated_seg_per_symbol = len(max_freq_indices) / n_symbols_actually_read
 print("Using %i segments / %i symbols = %f seg/sym" %
       (len(max_freq_indices), n_symbols_actually_read, calculated_seg_per_symbol))
-bitstream, hi, lo = freqs2bits(max_freq_indices, calculated_seg_per_symbol)
+bitstream, hi, lo = freqs2bits(max_freq_indices, calculated_seg_per_symbol)  # important
 print("Inferred %i is high and %i is low (+/- 1)." % (hi, lo))
 print(bitstream)
 print()
