@@ -8,9 +8,9 @@ import numpy as np
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 
 # Free parameters
-start_sample = 3080  # start of good mark/space in sample-data.wav
+start_sample = 1  # 3080 is start of good mark/space in sample-data.wav
 baud = 50  # symbol / sec
-n_symbols_to_read = 50
+n_symbols_to_read = 100
 seg_per_symbol = 3  # for STFT / FFT
 
 # Calculated and derived vars
@@ -88,7 +88,8 @@ print("\nBitstream:")
 calculated_seg_per_symbol = len(max_freq_indices) / n_symbols_actually_read
 print("Using %i segments / %i symbols = %f seg/sym" %
       (len(max_freq_indices), n_symbols_actually_read, calculated_seg_per_symbol))
-bitstream = freqs2bits(max_freq_indices, calculated_seg_per_symbol)
+bitstream, hi, lo = freqs2bits(max_freq_indices, calculated_seg_per_symbol)
+print("Inferred %i is high and %i is low (+/- 1)." % (hi, lo))
 print(bitstream)
 print()
 

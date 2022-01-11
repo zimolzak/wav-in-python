@@ -60,11 +60,17 @@ def freqs2bits(freq_list, elements_per_symbol=3):
     assert (high - low) > 1
     rl, values = rle(square_up(freq_list, high, low))
     npi = np.vectorize(int)
-    rounded = npi(np.around(rl / elements_per_symbol))
-    return run_length_to_bitstream(rounded, values, high, low)
+    rounded = npi(np.around(rl / elements_per_symbol))  # shortens all run lengths
+    return run_length_to_bitstream(rounded, values, high, low), high, low
 
 
 def run_length_to_bitstream(rl, values, v_high, v_low):
+    """Do run length DECODING and map low/high signal to logic 0/1.
+    Supposed to leave middle ones untouched.
+    [1,2,1,1,1] [7,1,7,1,5] -->
+    [1 0 0 1 0 5]
+    """
+    # fixme - weird results if pass list instead of np.array
     high_shifts = np.where(values == v_high, 1 - v_high, 0)
     low_shifts = np.where(values == v_low, 0 - v_low, 0)
     values_edited = values + high_shifts + low_shifts
@@ -72,6 +78,11 @@ def run_length_to_bitstream(rl, values, v_high, v_low):
 
 
 def square_up(a, v_high, v_low):
+    """Move all elements within 1.0 of v_high to v_high, etc.
+    Supposed to leave middle ones untouched.
+    [1 1 1 1 2 7 7 7 7 6 7 7 7 5 ] -->
+     1 1 1 1 1 7 7 7 7 7 7 7 7 5
+    """
     is_high = abs(a - v_high) <= 1
     is_low = abs(a - v_low) <= 1
     fixed1 = np.where(is_high, v_high, a)
