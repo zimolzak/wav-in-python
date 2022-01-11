@@ -49,6 +49,8 @@ def freqs2bits(freq_list, elements_per_symbol=3):
     Often like this:
     array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
     """
+    # fixme - elements_per_symbol is a critical param.
+    #  In theory, could try to auto-set from histogram(rl).
     h = np.histogram(freq_list, bins=np.arange(15))  # Integer bins. Can ignore h[1].
     least_to_most = h[0].argsort()
     common_val_1 = least_to_most[-1]
