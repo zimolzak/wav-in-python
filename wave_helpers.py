@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import signal
 
 
 def bytes2int_list(byte_list):
@@ -92,3 +93,19 @@ def rle(a):
         run_lengths = np.diff(np.append(-1, transition_locations))
         # p = np.cumsum(np.append(0, run_lengths))[:-1]  # positions
         return run_lengths, ia[transition_locations]
+
+
+class Fourier:
+    def __init__(self, int_list, sample_rate, baud, seg_per_symbol=3):
+        samples_per_symbol = sample_rate / baud
+        self.f, self.t, self.Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(
+            samples_per_symbol / seg_per_symbol))
+
+    def apply_passband(self, lo_freq, hi_freq):
+        pass
+
+    def print_summary(self):
+        pass
+
+    def save_plot(self, filename):
+        pass

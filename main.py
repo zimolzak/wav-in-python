@@ -2,7 +2,7 @@ import sys
 import wave
 from scipy import signal
 import numpy as np
-from wave_helpers import bytes2int_list, freqs2bits, file_to_int_list
+from wave_helpers import bytes2int_list, freqs2bits, file_to_int_list, Fourier
 from printing import print_wav_file_basics, try_bitstream_shapes, plot_fourier_data
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
@@ -23,6 +23,8 @@ int_list, n_symbols_actually_read = file_to_int_list(wav_file, start_sample=1, n
 
 
 # Short time Fourier transform
+
+F = Fourier(int_list, sample_rate, baud=50)
 
 f, t, Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(samples_per_symbol / seg_per_symbol))  # important (baud, sample rate, seg per symbol, int list, pass, pass)
 # Zxx first axis is freq, second is times
