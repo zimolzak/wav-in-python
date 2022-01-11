@@ -20,7 +20,19 @@ def bytes2int_list(byte_list):
 
 
 def file_to_int_list(wav_file, start_sample, n_symbols_to_read, baud):
-    pass
+    # Calculated and derived vars
+    sample_rate = wav_file.getframerate()
+    bytes_per_sample = wav_file.getsampwidth()
+    samples_per_symbol = sample_rate / baud
+    n_samples_to_read = int(samples_per_symbol * n_symbols_to_read)
+
+    # Read from file
+    wav_file.setpos(start_sample)
+    wav_data = wav_file.readframes(n_samples_to_read)
+    n_samples_actually_read = len(wav_data) / bytes_per_sample
+    n_symbols_actually_read = n_samples_actually_read / sample_rate * baud
+    int_list = list(bytes2int_list(wav_data))
+    return int_list, n_symbols_actually_read
 
 
 def freqs2bits(freq_list, elements_per_symbol=3):

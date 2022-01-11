@@ -14,20 +14,12 @@ baud = 50  # symbol / sec
 n_symbols_to_read = baud * 15  # 15 sec
 seg_per_symbol = 3  # for STFT / FFT
 
-# Calculated and derived vars
+# can't do without these, but move into other funcs later
 sample_rate = wav_file.getframerate()
-bytes_per_sample = wav_file.getsampwidth()
 samples_per_symbol = sample_rate / baud
-n_samples_to_read = int(samples_per_symbol * n_symbols_to_read)
 
-# Read from file
-wav_file.setpos(start_sample)
-wav_data = wav_file.readframes(n_samples_to_read)
-n_samples_actually_read = len(wav_data) / bytes_per_sample
-n_symbols_actually_read = n_samples_actually_read / sample_rate * baud
-int_list = list(bytes2int_list(wav_data))
 
-# int_list, n_samples_actually_read = file_to_int_list(wav_file, start_sample=1, n_symbols_to_read=750, baud=50)
+int_list, n_symbols_actually_read = file_to_int_list(wav_file, start_sample=1, n_symbols_to_read=750, baud=50)
 
 
 # Short time Fourier transform
