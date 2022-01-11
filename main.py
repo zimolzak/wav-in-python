@@ -1,16 +1,17 @@
 import sys
 import wave
-from wave_helpers import pretty_hex_string, bytes2int_list, ints2dots, freqs2bits
 from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
+from wave_helpers import bytes2int_list, freqs2bits
+from printing import pretty_hex_string, ints2dots
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 
 # Free parameters
 start_sample = 1  # 3080 is start of good mark/space in sample-data.wav
 baud = 50  # symbol / sec
-n_symbols_to_read = 100
+n_symbols_to_read = baud * 15  # 15 sec
 seg_per_symbol = 3  # for STFT / FFT
 
 # Calculated and derived vars

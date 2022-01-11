@@ -1,6 +1,7 @@
 # py.test --cov=. --cov-report html
-import pytest
-from wave_helpers import pretty_hex_string, bytes2int_list, ints2dots
+# import pytest  # only need for with pytest.raises(WhateverError):
+from wave_helpers import bytes2int_list
+from printing import pretty_hex_string, ints2dots
 
 
 def test_pretty_hex_string():
