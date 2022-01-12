@@ -1,4 +1,5 @@
 import numpy as np
+import wave  # so we can refer to classes in annotations
 from scipy import signal
 import matplotlib.pyplot as plt
 from printing import pretty_hex_string, ints2dots
@@ -62,59 +63,48 @@ def rle(a):
 
 
 class WaveData:
-    def __init__(self, wav_file, start_sample=0, n_symbols_to_read=750, baud=50):
+    def __init__(self, wav_file: wave.Wave_read, start_sample=0, n_symbols_to_read=750, baud=50):
         self.wav_file = wav_file  # fixme - may not need to be self.x once no re-read.
-        self.sample_rate = wav_file.getframerate()
         self.baud = baud
 
-        # Calculated and derived vars
-        bytes_per_sample = wav_file.getsampwidth()
-        samples_per_symbol = self.sample_rate / baud
-        n_samples_to_read = int(samples_per_symbol * n_symbols_to_read)
+        # Derived and calculated vars
+        self.sample_rate = wav_file.getframerate()
+        self.bytes_per_sample = wav_file.getsampwidth()
+        self.samples_per_symbol = self.sample_rate / baud
+        n_samples_to_read = int(self.samples_per_symbol * n_symbols_to_read)
 
         # Read from file
         wav_file.setpos(start_sample)
         self.wav_bytes = wav_file.readframes(n_samples_to_read)  # important op, maybe catch exceptions?
 
         # Usual results
-        n_samples_actually_read = len(self.wav_bytes) / bytes_per_sample
-        self.n_symbols_actually_read = n_samples_actually_read / self.sample_rate * baud
+        self.n_samples_actually_read = len(self.wav_bytes) / self.bytes_per_sample
+        self.n_symbols_actually_read = self.n_samples_actually_read / self.sample_rate * baud
         self.int_list = list(bytes2int_list(self.wav_bytes))
 
-    def print_wav_file_basics(self, n_frames_to_plot=15):
+    def print_wav_file_basics(self, n_samples_to_plot=15):
         char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
-
-        # interact with file
-        bytes_per_sample = self.wav_file.getsampwidth()
-        self.wav_file.setpos(0)
-        wav_bytes = self.wav_file.readframes(n_frames_to_plot)
-
-        # arithmetic
-        n_bytes_to_plot = n_frames_to_plot * bytes_per_sample
-        n_samples_actually_read = len(wav_bytes) / bytes_per_sample
-        n_symbols_actually_read = n_samples_actually_read / self.sample_rate * self.baud
-        samples_per_symbol = self.sample_rate / self.baud
+        n_bytes_to_plot = n_samples_to_plot * self.bytes_per_sample
 
         # objects for printing
-        pretty_hex_list = list(pretty_hex_string(wav_bytes.hex()))
-        int_list = list(bytes2int_list(wav_bytes))
-        dot_list = list(ints2dots(int_list))
+        pretty_hex_list = list(pretty_hex_string(self.wav_bytes.hex()))
+        dot_list = list(ints2dots(self.int_list))
 
         print("Params:\n", self.wav_file.getparams())
         print()
         print("File duration (s) =", self.wav_file.getnframes() / self.sample_rate)
-        print("Samples / FSK symbol =", samples_per_symbol)
-        print("Bytes in %f FSK symbols =" % n_symbols_actually_read, len(wav_bytes))
-        print("Seconds read =", n_samples_actually_read / self.sample_rate)
+        print("Samples / FSK symbol =", self.samples_per_symbol)
+        print("Bytes in %f FSK symbols =" % self.n_symbols_actually_read, len(self.wav_bytes))
+        print("Seconds read =", self.n_samples_actually_read / self.sample_rate)
         print()
-        print("First %i bytes (%i samples):" % (n_bytes_to_plot, n_frames_to_plot))
-        print(wav_bytes[:n_bytes_to_plot])
+        print("First %i bytes (%i samples):" % (n_bytes_to_plot, n_samples_to_plot))
+        print(self.wav_bytes[:n_bytes_to_plot])
         print()
         print(''.join(pretty_hex_list[:n_bytes_to_plot * char_per_byte]))  # pretty hex list
         print()
-        print(int_list[:n_bytes_to_plot // bytes_per_sample])  # int list
+        print(self.int_list[:n_bytes_to_plot // self.bytes_per_sample])  # int list
         print()
-        print('\n'.join(dot_list[:n_bytes_to_plot // bytes_per_sample]))  # dot list
+        print('\n'.join(dot_list[:n_bytes_to_plot // self.bytes_per_sample]))  # dot list
 
 
 class Fourier:

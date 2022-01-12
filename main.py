@@ -4,7 +4,7 @@ from wave_helpers import Fourier, Bitstream, WaveData
 
 with wave.open(sys.argv[1], 'r') as wav_file:
     W = WaveData(wav_file, start_sample=0, n_symbols_to_read=750, baud=50)
-    W.print_wav_file_basics(n_frames_to_plot=15)
+    W.print_wav_file_basics(n_samples_to_plot=15)
 
 # Short time Fourier transform
 F = Fourier(W, seg_per_symbol=3)
