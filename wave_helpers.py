@@ -108,7 +108,7 @@ class WaveData:
 
         :param wav_file: Object opened by wave.open() but not yet read
         :param start_sample: Where in the file to start reading
-        :param n_symbols_to_read: How many FSK symbols to read
+        :param n_symbols_to_read: How many FSK symbols to read. `None` to read whole file.
         :param baud: Rate of FSK symbols per second
         """
         self.wav_file = wav_file
@@ -118,7 +118,10 @@ class WaveData:
         self.sample_rate = wav_file.getframerate()
         self.bytes_per_sample = wav_file.getsampwidth()
         self.samples_per_symbol = self.sample_rate / baud
-        n_samples_to_read = int(self.samples_per_symbol * n_symbols_to_read)
+        if n_symbols_to_read is not None:
+            n_samples_to_read = int(self.samples_per_symbol * n_symbols_to_read)
+        else:
+            n_samples_to_read = wav_file.getnframes()
 
         # Read from file
         wav_file.setpos(start_sample)
@@ -289,7 +292,7 @@ class Bitstream:
 
 
 def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default.png', start_sample=0,
-                   n_symbols_to_read=750, baud=50, seg_per_symbol=3, pass_lo=400, pass_hi=2000) -> np.ndarray:
+                   n_symbols_to_read=None, baud=50, seg_per_symbol=3, pass_lo=400, pass_hi=2000) -> np.ndarray:
     """Chain together WAV reading, Fourier analysis, and Bitstream detection, with reasonable defaults. Useful
     for main.py or for testing.
 

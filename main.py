@@ -2,4 +2,4 @@ import sys
 from wave_helpers import whole_pipeline
 
 if __name__ == '__main__':
-    whole_pipeline(sys.argv[1], 'plot_main.png')  # throwaway return value
+    whole_pipeline(infile=sys.argv[1], outfile='plot_main.png', n_symbols_to_read=None)  # throwaway return value
