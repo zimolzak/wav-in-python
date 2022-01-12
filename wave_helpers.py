@@ -2,11 +2,16 @@ import numpy as np
 import wave  # so we can refer to classes in annotations
 from scipy import signal
 import matplotlib.pyplot as plt
+from typing import Generator
+
 from printing import pretty_hex_string, ints2dots
 
 
-def bytes2int_list(byte_list):
-    """Input a 'bytes' object. Add pairs of bytes together & yield generator of ints."""
+def bytes2int_list(byte_list: bytes) -> Generator[int, None, None]:
+    """Input a 'bytes' object. Add pairs of bytes together & yield generator of ints.
+
+    :param byte_list: bytes object, like b'#\xff^\xff', usually right out of readframes()
+    """
     # fixme - there may be a pre-made "decode" way to do this.
     for n, b in enumerate(byte_list):
         if n % 2 == 0:
@@ -82,7 +87,11 @@ class WaveData:
         self.n_symbols_actually_read = self.n_samples_actually_read / self.sample_rate * baud
         self.int_list = list(bytes2int_list(self.wav_bytes))
 
-    def print_wav_file_basics(self, n_samples_to_plot=15):
+    def print_summary(self, n_samples_to_plot=15):
+        """Reasonable metadata about WAV file, and text description of some of its data.
+
+        :param n_samples_to_plot: How many WAV samples to display (as numbers, text graph)
+        """
         char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
         n_bytes_to_plot = n_samples_to_plot * self.bytes_per_sample
 
@@ -110,10 +119,9 @@ class WaveData:
 
 class Fourier:
     def __init__(self, wave_data: WaveData, seg_per_symbol=3):
-        self.sample_rate = wave_data.sample_rate  # fixme - does it need to be attribute?
         self.n_symbols_actually_read = wave_data.n_symbols_actually_read
-        samples_per_symbol = self.sample_rate / wave_data.baud
-        self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=self.sample_rate,
+        samples_per_symbol = wave_data.sample_rate / wave_data.baud
+        self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=wave_data.sample_rate,
                                                nperseg=int(samples_per_symbol / seg_per_symbol))
         # Zxx's first axis is freq, second is times
         self.max_freq_indices = self.Zxx.argmax(0)  # Main output: list of which freq band is most intense, per time
@@ -149,9 +157,6 @@ class Bitstream:
         Often input in fourier.max_freq_indices is like this:
         array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
         """
-        # fixme - make an 8N1 and 5N1 decoder on B.stream
-        # fixme - make guesses about B.stream width
-
         #  elements (segments) per symbol is a critical param.
         #  In theory, could try to auto-set from histogram(rl).
         #  Now we auto-set by knowing N symbols read.
@@ -180,9 +185,10 @@ class Bitstream:
         print("%i bits" % len(self.stream))
         print()
 
-    def print_shapes(self, min_columns, max_columns):
-        # fixme - could be good to pass iterable of cols rather than min/max.
-        for cols in range(min_columns, max_columns):
+    def print_shapes(self, column_widths):
+        # fixme - make an 8N1 and 5N1 decoder on B.stream
+        # fixme - make guesses about B.stream width
+        for cols in column_widths:
             # 5N1 = 7
             # 8N1 = 10
             if cols == 7:

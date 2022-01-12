@@ -5,7 +5,7 @@ from wave_helpers import Fourier, Bitstream, WaveData
 # Load file
 with wave.open(sys.argv[1], 'r') as wav_file:
     W = WaveData(wav_file, start_sample=0, n_symbols_to_read=750, baud=50)
-W.print_wav_file_basics(n_samples_to_plot=15)
+W.print_summary(n_samples_to_plot=15)
 
 # Short time Fourier transform
 F = Fourier(W, seg_per_symbol=3)
@@ -21,4 +21,4 @@ F.save_plot('stft.png')
 # Translate FFT data to FSK bitstream
 B = Bitstream(F)
 B.print_summary()
-B.print_shapes(5, 12)
+B.print_shapes(range(5, 12))
