@@ -51,7 +51,7 @@ def run_length_to_bitstream(rl: np.ndarray, values: np.ndarray, v_high: int, v_l
     low_shifts = np.where(values == v_low, 0 - v_low, 0)
     values_edited = values + high_shifts + low_shifts
     # fixme exception (or warn?) if values not in the set {v_high, v_low}
-    return np.repeat(values_edited, rl)
+    return np.repeat(values_edited, rl)  # requires ints in rl, not floats
 
 
 def square_up(a: np.ndarray, v_high: int, v_low: int, tolerance: int = 1) -> np.ndarray:
