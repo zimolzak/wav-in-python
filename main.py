@@ -22,6 +22,6 @@ F.save_plot('stft.png')
 # 11.62 cycles in a low freq symbol, 28.62 in high freq.
 
 # Translate FFT data to FSK bitstream
-B = Bitstream(F.max_freq_indices, n_symbols_actually_read, elements_per_symbol=3)
+B = Bitstream(F, n_symbols_actually_read, elements_per_symbol=3)
 B.print_summary()
 try_bitstream_shapes(B.stream, 5, 12)

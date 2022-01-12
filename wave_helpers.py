@@ -110,30 +110,30 @@ class Fourier:
 
 
 class Bitstream:
-    def __init__(self, freq_list, n_symbols_actually_read, elements_per_symbol=3):
+    def __init__(self, fourier, n_symbols_actually_read, elements_per_symbol=3):
         """Take np.array and output bitstream.
         Often input is like this:
         array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
         """
         # fixme - elements_per_symbol is a critical param.
         #  In theory, could try to auto-set from histogram(rl).
-        self.max_freq_indices = freq_list
         self.n_symbols_actually_read = n_symbols_actually_read
+        self.max_freq_indices = fourier.max_freq_indices  # need to save it for print later.
         self.calculated_seg_per_symbol = len(self.max_freq_indices) / n_symbols_actually_read
-        h = np.histogram(freq_list, bins=np.arange(15))  # Integer bins. Can ignore h[1].
+        h = np.histogram(self.max_freq_indices, bins=np.arange(15))  # Integer bins. Can ignore h[1].
         least_to_most = h[0].argsort()
         common_val_1 = least_to_most[-1]
         common_val_2 = least_to_most[-2]
         self.low = min(common_val_1, common_val_2)
         self.high = max(common_val_1, common_val_2)
         assert (self.high - self.low) > 1
-        rl, values = rle(square_up(freq_list, self.high, self.low))
+        rl, values = rle(square_up(self.max_freq_indices, self.high, self.low))
         npi = np.vectorize(int)
         rounded = npi(np.around(rl / elements_per_symbol))  # shortens all run lengths
         self.stream = run_length_to_bitstream(rounded, values, self.high, self.low)
 
     def print_summary(self):
-        print("\nBitstream:")
+        print("\n\n# Bitstream\n")
         print("Using %i segments / %i symbols = %f seg/sym" %
               (len(self.max_freq_indices), self.n_symbols_actually_read, self.calculated_seg_per_symbol))
         print("Inferred %i is high and %i is low (+/- 1)." % (self.high, self.low))
