@@ -91,28 +91,28 @@ class WaveData:
         # interact with file
         bytes_per_sample = self.wav_file.getsampwidth()
         self.wav_file.setpos(0)
-        wav_data = self.wav_file.readframes(n_frames_to_plot)
+        wav_bytes = self.wav_file.readframes(n_frames_to_plot)
 
         # arithmetic
         n_bytes_to_plot = n_frames_to_plot * bytes_per_sample
-        n_samples_actually_read = len(wav_data) / bytes_per_sample
+        n_samples_actually_read = len(wav_bytes) / bytes_per_sample
         n_symbols_actually_read = n_samples_actually_read / self.sample_rate * self.baud
         samples_per_symbol = self.sample_rate / self.baud
 
         # objects for printing
-        pretty_hex_list = list(pretty_hex_string(wav_data.hex()))
-        int_list = list(bytes2int_list(wav_data))
+        pretty_hex_list = list(pretty_hex_string(wav_bytes.hex()))
+        int_list = list(bytes2int_list(wav_bytes))
         dot_list = list(ints2dots(int_list))
 
         print("Params:\n", self.wav_file.getparams())
         print()
         print("File duration (s) =", self.wav_file.getnframes() / self.sample_rate)
         print("Samples / FSK symbol =", samples_per_symbol)
-        print("Bytes in %f FSK symbols =" % n_symbols_actually_read, len(wav_data))
+        print("Bytes in %f FSK symbols =" % n_symbols_actually_read, len(wav_bytes))
         print("Seconds read =", n_samples_actually_read / self.sample_rate)
         print()
         print("First %i bytes (%i samples):" % (n_bytes_to_plot, n_frames_to_plot))
-        print(wav_data[:n_bytes_to_plot])
+        print(wav_bytes[:n_bytes_to_plot])
         print()
         print(''.join(pretty_hex_list[:n_bytes_to_plot * char_per_byte]))  # pretty hex list
         print()
@@ -122,10 +122,10 @@ class WaveData:
 
 
 class Fourier:
-    def __init__(self, wave_data: WaveData, baud, seg_per_symbol=3):
+    def __init__(self, wave_data: WaveData, seg_per_symbol=3):
         self.sample_rate = wave_data.sample_rate
         self.n_symbols_actually_read = wave_data.n_symbols_actually_read
-        samples_per_symbol = self.sample_rate / baud
+        samples_per_symbol = self.sample_rate / wave_data.baud
         self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=self.sample_rate,
                                                nperseg=int(samples_per_symbol / seg_per_symbol))
         # Zxx's first axis is freq, second is times

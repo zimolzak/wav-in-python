@@ -7,7 +7,7 @@ with wave.open(sys.argv[1], 'r') as wav_file:
     W.print_wav_file_basics(n_frames_to_plot=15)
 
 # Short time Fourier transform
-F = Fourier(W, baud=50, seg_per_symbol=3)
+F = Fourier(W, seg_per_symbol=3)
 F.apply_passband(400, 2000)
 F.print_summary()
 F.save_plot('stft.png')
