@@ -78,13 +78,14 @@ def rle(a):
 
 
 class WaveData:
-    def __init__(self, wav_file):
+    def __init__(self, wav_file, start_sample=0, n_symbols_to_read=750, baud=50):
         self.wav_file = wav_file
         self.sample_rate = wav_file.getframerate()
+        self.baud = baud
         self.int_list, self.n_symbols_actually_read = \
-            file_to_int_list(wav_file, start_sample=1, n_symbols_to_read=750, baud=50)
+            file_to_int_list(wav_file, start_sample, n_symbols_to_read, baud)
 
-    def print_wav_file_basics(self, n_frames_to_plot=15, baud=50):
+    def print_wav_file_basics(self, n_frames_to_plot=15):
         char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
 
         # interact with file
@@ -95,8 +96,8 @@ class WaveData:
         # arithmetic
         n_bytes_to_plot = n_frames_to_plot * bytes_per_sample
         n_samples_actually_read = len(wav_data) / bytes_per_sample
-        n_symbols_actually_read = n_samples_actually_read / self.sample_rate * baud
-        samples_per_symbol = self.sample_rate / baud
+        n_symbols_actually_read = n_samples_actually_read / self.sample_rate * self.baud
+        samples_per_symbol = self.sample_rate / self.baud
 
         # objects for printing
         pretty_hex_list = list(pretty_hex_string(wav_data.hex()))
