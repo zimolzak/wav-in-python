@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
+from printing import pretty_hex_string, ints2dots
 
 
 def bytes2int_list(byte_list):
@@ -76,11 +77,56 @@ def rle(a):
         return run_lengths, ia[transition_locations]
 
 
+class WaveData:
+    def __init__(self, wav_file):
+        self.wav_file = wav_file
+        self.sample_rate = wav_file.getframerate()
+        self.int_list, self.n_symbols_actually_read = \
+            file_to_int_list(wav_file, start_sample=1, n_symbols_to_read=750, baud=50)
+
+    def print_wav_file_basics(self, n_frames_to_plot=15, baud=50):
+        char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
+
+        # interact with file
+        bytes_per_sample = self.wav_file.getsampwidth()
+        self.wav_file.setpos(0)
+        wav_data = self.wav_file.readframes(n_frames_to_plot)
+
+        # arithmetic
+        n_bytes_to_plot = n_frames_to_plot * bytes_per_sample
+        n_samples_actually_read = len(wav_data) / bytes_per_sample
+        n_symbols_actually_read = n_samples_actually_read / self.sample_rate * baud
+        samples_per_symbol = self.sample_rate / baud
+
+        # objects for printing
+        pretty_hex_list = list(pretty_hex_string(wav_data.hex()))
+        int_list = list(bytes2int_list(wav_data))
+        dot_list = list(ints2dots(int_list))
+
+        print("Params:\n", self.wav_file.getparams())
+        print()
+        print("File duration (s) =", self.wav_file.getnframes() / self.sample_rate)
+        print("Samples / FSK symbol =", samples_per_symbol)
+        print("Bytes in %f FSK symbols =" % n_symbols_actually_read, len(wav_data))
+        print("Seconds read =", n_samples_actually_read / self.sample_rate)
+        print()
+        print("First %i bytes (%i samples):" % (n_bytes_to_plot, n_frames_to_plot))
+        print(wav_data[:n_bytes_to_plot])
+        print()
+        print(''.join(pretty_hex_list[:n_bytes_to_plot * char_per_byte]))  # pretty hex list
+        print()
+        print(int_list[:n_bytes_to_plot // bytes_per_sample])  # int list
+        print()
+        print('\n'.join(dot_list[:n_bytes_to_plot // bytes_per_sample]))  # dot list
+
+
 class Fourier:
-    def __init__(self, int_list, sample_rate, baud, seg_per_symbol=3):
-        samples_per_symbol = sample_rate / baud
-        self.f, self.t, self.Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(
-            samples_per_symbol / seg_per_symbol))
+    def __init__(self, wave_data: WaveData, baud, seg_per_symbol=3):
+        self.sample_rate = wave_data.sample_rate
+        self.n_symbols_actually_read = wave_data.n_symbols_actually_read
+        samples_per_symbol = self.sample_rate / baud
+        self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=self.sample_rate,
+                                               nperseg=int(samples_per_symbol / seg_per_symbol))
         # Zxx's first axis is freq, second is times
         self.max_freq_indices = self.Zxx.argmax(0)  # list of which freq band is most intense, per time
         # fixme - it is possible I don't understand the "nperseg" parameter.
@@ -110,18 +156,18 @@ class Fourier:
 
 
 class Bitstream:
-    def __init__(self, fourier, n_symbols_actually_read):
-        """Take np.array and output bitstream.
-        Often input is like this:
+    def __init__(self, fourier):
+        """Take Fourier object and output bitstream.
+        Often input in fourier.max_freq_indices is like this:
         array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
         """
         #  elements (segments) per symbol is a critical param.
         #  In theory, could try to auto-set from histogram(rl).
         #  Now we auto-set by knowing N symbols read.
         #  Could also pass this in from knowledge of FFT setup (but it was 2x as much, overlap?).
-        self.n_symbols_actually_read = n_symbols_actually_read
+        self.n_symbols_actually_read = fourier.n_symbols_actually_read
         self.max_freq_indices = fourier.max_freq_indices  # need to save it for print later.
-        self.calculated_seg_per_symbol = len(self.max_freq_indices) / n_symbols_actually_read
+        self.calculated_seg_per_symbol = len(self.max_freq_indices) / self.n_symbols_actually_read
         h = np.histogram(self.max_freq_indices, bins=np.arange(15))  # Integer bins. Can ignore h[1].
         least_to_most = h[0].argsort()
         common_val_1 = least_to_most[-1]
@@ -156,7 +202,6 @@ class Bitstream:
             n_padding = cols - (n % cols)
             padding = [0] * n_padding
             bitstream_padded = np.append(self.stream, padding)
-            # fixme - maybe do without "import numpy" if we do bitstream.append not np.append
             rows = len(bitstream_padded) // cols
             print(np.reshape(bitstream_padded, (rows, cols)))
             print()
