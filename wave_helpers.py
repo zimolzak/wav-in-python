@@ -37,26 +37,6 @@ def file_to_int_list(wav_file, start_sample, n_symbols_to_read, baud):
     return int_list, n_symbols_actually_read
 
 
-def freqs2bits(freq_list, elements_per_symbol=3):
-    """Take np.array and output bitstream.
-    Often input is like this:
-    array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
-    """
-    # fixme - elements_per_symbol is a critical param.
-    #  In theory, could try to auto-set from histogram(rl).
-    h = np.histogram(freq_list, bins=np.arange(15))  # Integer bins. Can ignore h[1].
-    least_to_most = h[0].argsort()
-    common_val_1 = least_to_most[-1]
-    common_val_2 = least_to_most[-2]
-    low = min(common_val_1, common_val_2)
-    high = max(common_val_1, common_val_2)
-    assert (high - low) > 1
-    rl, values = rle(square_up(freq_list, high, low))
-    npi = np.vectorize(int)
-    rounded = npi(np.around(rl / elements_per_symbol))  # shortens all run lengths
-    return run_length_to_bitstream(rounded, values, high, low), high, low
-
-
 def run_length_to_bitstream(rl, values, v_high, v_low):
     """Do run length DECODING and map low/high signal to logic 0/1.
     Supposed to leave middle ones untouched.
@@ -123,3 +103,35 @@ class Fourier:
         plt.xlabel('Time [sec]')
         plt.savefig(filename)
         # plt.show()
+
+
+class Bitstream:
+    def __init__(self, freq_list, n_symbols_actually_read, elements_per_symbol=3):
+        """Take np.array and output bitstream.
+        Often input is like this:
+        array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
+        """
+        # fixme - elements_per_symbol is a critical param.
+        #  In theory, could try to auto-set from histogram(rl).
+        self.max_freq_indices = freq_list
+        self.n_symbols_actually_read = n_symbols_actually_read
+        self.calculated_seg_per_symbol = len(self.max_freq_indices) / n_symbols_actually_read
+        h = np.histogram(freq_list, bins=np.arange(15))  # Integer bins. Can ignore h[1].
+        least_to_most = h[0].argsort()
+        common_val_1 = least_to_most[-1]
+        common_val_2 = least_to_most[-2]
+        self.low = min(common_val_1, common_val_2)
+        self.high = max(common_val_1, common_val_2)
+        assert (self.high - self.low) > 1
+        rl, values = rle(square_up(freq_list, self.high, self.low))
+        npi = np.vectorize(int)
+        rounded = npi(np.around(rl / elements_per_symbol))  # shortens all run lengths
+        self.stream = run_length_to_bitstream(rounded, values, self.high, self.low)
+
+    def print_summary(self):
+        print("\nBitstream:")
+        print("Using %i segments / %i symbols = %f seg/sym" %
+              (len(self.max_freq_indices), self.n_symbols_actually_read, self.calculated_seg_per_symbol))
+        print("Inferred %i is high and %i is low (+/- 1)." % (self.high, self.low))
+        print(self.stream)
+        print()

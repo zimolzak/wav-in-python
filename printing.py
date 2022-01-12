@@ -65,7 +65,12 @@ def ints2dots(ints):
         yield '.' * n_spaces + 'X'
 
 
+def print_bitstream_info():
+    pass
+
+
 def try_bitstream_shapes(bitstream, min_columns, max_columns):
+    # fixme - could be good to pass iterable of cols rather than min/max.
     for cols in range(min_columns, max_columns):
         # 5N1 = 7
         # 8N1 = 10
