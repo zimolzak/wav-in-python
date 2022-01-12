@@ -288,22 +288,27 @@ class Bitstream:
             print()
 
 
-def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default.png') -> None:
-    """Chain together WAV reading, Fourier analysis, and Bitstream detection. Hard code reasonable defaults. Useful
+def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default.png', start_sample=0,
+                   n_symbols_to_read=750, baud=50, seg_per_symbol=3, pass_lo=400, pass_hi=2000) -> np.ndarray:
+    """Chain together WAV reading, Fourier analysis, and Bitstream detection, with reasonable defaults. Useful
     for main.py or for testing.
 
     :param infile: Name of input WAV file
-    :param outfile: Name of output image file
+    :param outfile: Name of output image file. Set to `None` to suppress all print & file output.
     """
     with wave.open(infile, 'r') as wav_file:
-        W = WaveData(wav_file, start_sample=0, n_symbols_to_read=750, baud=50)
-    W.print_summary(n_samples_to_plot=15)
+        w = WaveData(wav_file, start_sample, n_symbols_to_read, baud)
+    f = Fourier(w, seg_per_symbol)
+    f.apply_passband(pass_lo, pass_hi)
+    b = Bitstream(f)
 
-    F = Fourier(W, seg_per_symbol=3)
-    F.apply_passband(400, 2000)
-    F.print_summary()
-    F.save_plot(outfile)
+    # outputs
+    if outfile is not None:
+        w.print_summary(n_samples_to_plot=15)
+        f.print_summary()
+        f.save_plot(outfile)
+        b.print_summary()
+        b.print_shapes(range(5, 12))
 
-    B = Bitstream(F)
-    B.print_summary()
-    B.print_shapes(range(5, 12))
+    return b.stream
+
