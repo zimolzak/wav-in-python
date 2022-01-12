@@ -1,24 +1,5 @@
 import sys
-import wave
-from wave_helpers import Fourier, Bitstream, WaveData
+from wave_helpers import whole_pipeline
 
-# Load file
-with wave.open(sys.argv[1], 'r') as wav_file:
-    W = WaveData(wav_file, start_sample=0, n_symbols_to_read=750, baud=50)
-W.print_summary(n_samples_to_plot=15)
-
-# Short time Fourier transform
-F = Fourier(W, seg_per_symbol=3)
-F.apply_passband(400, 2000)
-F.print_summary()
-F.save_plot('stft.png')
-
-# shift of 850 Hz. Mine by inspection is about 581 Hz and 1431 Hz
-# one symbol is about 450 - 470 samples by inspection
-# calculated at 441 samples/symbol
-# 11.62 cycles in a low freq symbol, 28.62 in high freq.
-
-# Translate FFT data to FSK bitstream
-B = Bitstream(F)
-B.print_summary()
-B.print_shapes(range(5, 12))
+if __name__ == '__main__':
+    whole_pipeline(sys.argv[1], 'stft.png')

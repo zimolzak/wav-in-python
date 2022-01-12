@@ -214,6 +214,11 @@ class Fourier:
         plt.savefig(filename)
         # plt.show()
 
+# By spec: FSK shift of 850 Hz. Mine by inspection is about 581 Hz and 1431 Hz
+# one symbol is about 450 - 470 samples by inspection
+# calculated at 441 samples/symbol
+# 11.62 cycles in a low freq symbol, 28.62 in high freq.
+
 
 class Bitstream:
     def __init__(self, fourier: Fourier) -> None:
@@ -280,3 +285,24 @@ class Bitstream:
             n_rows = len(bitstream_padded) // n_columns
             print(np.reshape(bitstream_padded, (n_rows, n_columns)))
             print()
+
+
+def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'stft.png') -> None:
+    """Chain together WAV reading, Fourier analysis, and Bitstream detection. Hard code reasonable defaults. Useful
+    for main.py or for testing.
+
+    :param infile: Name of input WAV file
+    :param outfile: Name of output image file
+    """
+    with wave.open(infile, 'r') as wav_file:
+        W = WaveData(wav_file, start_sample=0, n_symbols_to_read=750, baud=50)
+    W.print_summary(n_samples_to_plot=15)
+
+    F = Fourier(W, seg_per_symbol=3)
+    F.apply_passband(400, 2000)
+    F.print_summary()
+    F.save_plot(outfile)
+
+    B = Bitstream(F)
+    B.print_summary()
+    B.print_shapes(range(5, 12))
