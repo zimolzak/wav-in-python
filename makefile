@@ -2,7 +2,7 @@ all: htmlcov/index.html plot_main.png
 
 .PHONY: all clean
 
-htmlcov/index.html: test_wave_helpers.py wave_helpers.py printing.py test_sample_data.py
+htmlcov/index.html: wave_helpers.py printing.py test_wave_helpers.py test_printing.py
 	py.test --cov=. --cov-report html
 
 plot_main.png: main.py sample-data.wav wave_helpers.py printing.py

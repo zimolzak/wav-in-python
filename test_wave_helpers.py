@@ -3,18 +3,8 @@ import pytest  # only need for with pytest.raises(WhateverError):
 import numpy as np
 import wave
 
-from wave_helpers import bytes2int_list, run_length_to_bitstream, square_up, rle, WaveData, Fourier, Bitstream
-from printing import pretty_hex_string, ints2dots
-
-
-def test_pretty_hex_string():
-    # with pytest.raises(ValueError):
-    #    duh(42)
-    assert list(pretty_hex_string("a")) == ["a"]
-    assert list(pretty_hex_string("abc")) == ["a", "b", "c"]
-    has_wrap = list(pretty_hex_string("a" * 4 * 9))
-    assert "a\n" in has_wrap
-    # assert list(pretty_hex_string("a" * )) == ["a", "b", "c"]
+from wave_helpers import bytes2int_list, run_length_to_bitstream, square_up, rle
+from wave_helpers import WaveData, Fourier, Bitstream, whole_pipeline
 
 
 def test_bytes2int_list():
@@ -32,19 +22,12 @@ def test_bytes2int_list():
             i = list(bytes2int_list(b))[0]
             assert 0 <= i < 2 ** 16
             tests_complete += 1
-    print("Did %i auto tests of bytes2int_list()" % tests_complete)
-
-
-def test_ints2dots():
-    assert list(ints2dots([3])) == ['X']
-    assert len(list(ints2dots([65535]))[0]) == 76
-    assert '.' * 10 in list(ints2dots([65535]))[0]
-    assert '.' * (75 // 10) in list(ints2dots([65535 // 10]))[0]
+    print("\n    Did %i auto tests of bytes2int_list()" % tests_complete, end='')
 
 
 def test_rl2b():
     with pytest.raises(ValueError):
-        bs = run_length_to_bitstream(np.array([5, 5, 1]), np.array([7, 1]), 7, 1)
+        dummy = run_length_to_bitstream(np.array([5, 5, 1]), np.array([7, 1]), 7, 1)  # throwaway
     bs = run_length_to_bitstream(np.array([5, 5]), np.array([7, 1]), 7, 1)
     assert np.all(bs == np.array([1] * 5 + [0] * 5))
 
@@ -53,7 +36,7 @@ def test_su():
     ary_in = np.array([7] * 5 + [6] + [8] + [1] * 5 + [0])
     ary_out = np.array([7] * 7 + [1] * 6)
     with pytest.raises(ValueError):
-        x = square_up(ary_in, 7, 1, 10)
+        dummy = square_up(ary_in, 7, 1, 10)  # throwaway
     x = square_up(ary_in, 7, 1)
     assert np.all(x == ary_out)
 
@@ -81,4 +64,11 @@ def test_bitstream_exception():
     f.max_freq_indices = np.array([1] * a + [2] * b)
 
     with pytest.raises(ValueError):
-        bs = Bitstream(f)
+        dummy = Bitstream(f)  # throwaway
+
+
+def test_whole_pipeline():
+    whole_pipeline(infile='sample-data.wav', outfile='plot_default.png', n_symbols_to_read=100)
+    # throwaway return value
+    # Quit at 100 symbols = 2 sec, so effectively read the whole of sample-data.wav, which is only 1 sec.
+    # fixme - very basic, no asserts at all, just needs to run without error.
