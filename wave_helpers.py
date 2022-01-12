@@ -22,22 +22,6 @@ def bytes2int_list(byte_list):
             # indexing or list() on a 'bytes' obj auto-converts to 'int'
 
 
-def file_to_int_list(wav_file, start_sample, n_symbols_to_read, baud):
-    # Calculated and derived vars
-    sample_rate = wav_file.getframerate()
-    bytes_per_sample = wav_file.getsampwidth()
-    samples_per_symbol = sample_rate / baud
-    n_samples_to_read = int(samples_per_symbol * n_symbols_to_read)
-
-    # Read from file
-    wav_file.setpos(start_sample)
-    wav_data = wav_file.readframes(n_samples_to_read)
-    n_samples_actually_read = len(wav_data) / bytes_per_sample
-    n_symbols_actually_read = n_samples_actually_read / sample_rate * baud
-    int_list = list(bytes2int_list(wav_data))
-    return int_list, n_symbols_actually_read
-
-
 def run_length_to_bitstream(rl, values, v_high, v_low):
     """Do run length DECODING and map low/high signal to logic 0/1.
     Supposed to leave middle ones untouched.
@@ -79,11 +63,23 @@ def rle(a):
 
 class WaveData:
     def __init__(self, wav_file, start_sample=0, n_symbols_to_read=750, baud=50):
-        self.wav_file = wav_file
+        self.wav_file = wav_file  # fixme - may not need to be self.x once no re-read.
         self.sample_rate = wav_file.getframerate()
         self.baud = baud
-        self.int_list, self.n_symbols_actually_read = \
-            file_to_int_list(wav_file, start_sample, n_symbols_to_read, baud)
+
+        # Calculated and derived vars
+        bytes_per_sample = wav_file.getsampwidth()
+        samples_per_symbol = self.sample_rate / baud
+        n_samples_to_read = int(samples_per_symbol * n_symbols_to_read)
+
+        # Read from file
+        wav_file.setpos(start_sample)
+        self.wav_bytes = wav_file.readframes(n_samples_to_read)  # important op, maybe catch exceptions?
+
+        # Usual results
+        n_samples_actually_read = len(self.wav_bytes) / bytes_per_sample
+        self.n_symbols_actually_read = n_samples_actually_read / self.sample_rate * baud
+        self.int_list = list(bytes2int_list(self.wav_bytes))
 
     def print_wav_file_basics(self, n_frames_to_plot=15):
         char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
@@ -123,13 +119,13 @@ class WaveData:
 
 class Fourier:
     def __init__(self, wave_data: WaveData, seg_per_symbol=3):
-        self.sample_rate = wave_data.sample_rate
+        self.sample_rate = wave_data.sample_rate  # fixme - does it need to be attibute?
         self.n_symbols_actually_read = wave_data.n_symbols_actually_read
         samples_per_symbol = self.sample_rate / wave_data.baud
         self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=self.sample_rate,
                                                nperseg=int(samples_per_symbol / seg_per_symbol))
         # Zxx's first axis is freq, second is times
-        self.max_freq_indices = self.Zxx.argmax(0)  # list of which freq band is most intense, per time
+        self.max_freq_indices = self.Zxx.argmax(0)  # Main output: list of which freq band is most intense, per time
         # fixme - it is possible I don't understand the "nperseg" parameter.
 
     def apply_passband(self, lo_freq=400, hi_freq=2000):
