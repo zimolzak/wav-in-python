@@ -291,14 +291,23 @@ class Bitstream:
             print()
 
 
-def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default.png', start_sample=0,
-                   n_symbols_to_read=None, baud=50, seg_per_symbol=3, pass_lo=400, pass_hi=2000) -> np.ndarray:
+def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default.png',
+                   start_sample: int = 0, n_symbols_to_read: int = None,
+                   baud: int = 50, seg_per_symbol: int = 3,
+                   pass_lo: int = 400, pass_hi: int = 2000) -> np.ndarray:
     """Chain together WAV reading, Fourier analysis, and Bitstream detection, with reasonable defaults. Useful
     for main.py or for testing.
 
     :param infile: Name of input WAV file
     :param outfile: Name of output image file. Set to `None` to suppress all print & file output.
+    :param start_sample: WAV file position to start reading
+    :param n_symbols_to_read: Amount of FSK symbols to read from WAV file. `None` means read it all.
+    :param baud: Symbols per second, to help calculate duration of an FT window (segment)
+    :param seg_per_symbol: Number of FT segments to compute for each FSK symbol
+    :param pass_lo: Spectrum below this frequency (Hz) is ignored as neither mark nor space.
+    :param pass_hi: Spectrum above this frequency (Hz) is ignored as neither mark nor space.
     """
+    # fixme - baud, pass_lo, pass_hi should maybe be float not int.
     with wave.open(infile, 'r') as wav_file:
         w = WaveData(wav_file, start_sample, n_symbols_to_read, baud)
     f = Fourier(w, seg_per_symbol)
@@ -314,4 +323,3 @@ def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default
         b.print_shapes(range(5, 12))
 
     return b.stream
-
