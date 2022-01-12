@@ -246,7 +246,8 @@ class Bitstream:
         common_val_2 = least_to_most[-2]
         self.low = min(common_val_1, common_val_2)
         self.high = max(common_val_1, common_val_2)
-        assert (self.high - self.low) > 1  # fixme - raise exception
+        if (self.high - self.low) <= 1:
+            raise ValueError("high %i and low %i are very close: not likely to process well")
 
         # Compress multiple FT segments into 1 symbol, and map mark/space frequencies to 0/1.
         rl, values = rle(square_up(self.max_freq_indices, self.high, self.low))

@@ -1,26 +1,26 @@
 from typing import Generator
 
 
-def pretty_hex_string(hs: str) -> Generator[str, None, None]:
+def pretty_hex_string(hs: str, bytes_space: int = 2, bytes_newline: int = 16) -> Generator[str, None, None]:
     """Prepare hexadecimal text for easier reading.
     "abcdefgh" -> ['a', 'b', 'c', 'd ', 'e', 'f', 'g', 'h ']
     Note the spaces. Often you do ''.join(list()) to get this:
     'abcd efgh '
 
     :param hs: Any string. Usually hexadecimal letters/numbers.
+    :param bytes_newline: How many bytes until insert newline
+    :param bytes_space: How many bytes until insert space
     :return: Yield a stream of chars with spaces and newlines added every so often.
     """
-    bytes_space = 2  # fixme make these into function args
-    bytes_newline = 16
-    cs = bytes_space * 2  # chars per space (4)
-    cn = bytes_newline * 2  # chars per newline (32)
+    characters_per_space = bytes_space * 2  # chars per space (4)
+    characters_per_newline = bytes_newline * 2  # chars per newline (32)
     for n, c in enumerate(hs):
         # every 16 bytes add a newline
-        if n % cn == cn - 1:
+        if n % characters_per_newline == characters_per_newline - 1:
             yield c + "\n"
-        elif n % cs == cs - 1:
+        elif n % characters_per_space == characters_per_space - 1:
             # Every 4 char (2 bytes), add a space.
-            yield c + " "  # fixme should we yield 2 things?
+            yield c + " "
         else:
             yield c
 
