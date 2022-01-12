@@ -1,7 +1,7 @@
 import numpy as np
-import wave  # so we can refer to classes in annotations
-from scipy import signal
 import matplotlib.pyplot as plt
+import wave  # so we can refer to its classes in type hint annotations
+from scipy import signal
 from typing import Generator
 
 from printing import pretty_hex_string, ints2dots
@@ -11,6 +11,7 @@ def bytes2int_list(byte_list: bytes) -> Generator[int, None, None]:
     """Input a 'bytes' object. Add pairs of bytes together & yield generator of ints.
 
     :param byte_list: bytes object, like b'#\xff^\xff', usually right out of readframes()
+    :return: Yield decoded values (integers 0 to 65535).
     """
     # fixme - there may be a pre-made "decode" way to do this.
     for n, b in enumerate(byte_list):
@@ -28,32 +29,58 @@ def bytes2int_list(byte_list: bytes) -> Generator[int, None, None]:
             # indexing or list() on a 'bytes' obj auto-converts to 'int'
 
 
-def run_length_to_bitstream(rl, values, v_high, v_low):
+def run_length_to_bitstream(rl: np.ndarray, values: np.ndarray, v_high: int, v_low: int) -> np.ndarray:
     """Do run length DECODING and map low/high signal to logic 0/1.
-    Supposed to leave middle ones untouched.
+    Supposed to leave middle values untouched.
     [1,2,1,1,1] [7,1,7,1,5] -->
     [1 0 0 1 0 5]
+
+    :param rl: Array of run lengths
+    :param values: Array of corresponding values (positive ints)
+    :param v_high: Value that will be mapped to 1
+    :param v_low: Value that will be mapped to 0
+    :return: Array of hopefully only {0,1} with runs re-expanded.
+    :raises: ValueError if rl not exactly same size as values.
     """
-    # fixme - weird results if pass list instead of np.array
+    rl = np.asarray(rl)  # so that technically it works on lists
+    values = np.asarray(values)
+    if rl.shape != values.shape:
+        raise ValueError("rl and values shapes unequal: %s %s" % (str(rl.shape), str(values.shape)))
     high_shifts = np.where(values == v_high, 1 - v_high, 0)
     low_shifts = np.where(values == v_low, 0 - v_low, 0)
     values_edited = values + high_shifts + low_shifts
+    # fixme exception (or warn?) if values not in the set {v_high, v_low}
     return np.repeat(values_edited, rl)
 
 
-def square_up(a, v_high, v_low):
-    """Move all elements within 1.0 of v_high to v_high, etc.
+def square_up(a: np.ndarray, v_high: int, v_low: int, tolerance: int = 1) -> np.ndarray:
+    """Take all elements close to v_high, and nudge them equal to v_high. Same for v_low.
+    Makes a nearly square wave into a very square wave.
     Supposed to leave middle ones untouched.
     [1 1 1 1 2 7 7 7 7 6 7 7 7 5 ] -->
      1 1 1 1 1 7 7 7 7 7 7 7 7 5
+
+     :param a: Array of values (usually time series)
+     :param v_high: High value to nudge to
+     :param v_low: Low value to nudge to
+     :param tolerance: How much are you allowed to nudge?
+     :return: Array of squared-up values
+     :raises: ValueError: if intervals overlap
     """
-    is_high = abs(a - v_high) <= 1
-    is_low = abs(a - v_low) <= 1
+    if min(v_high + tolerance, v_low + tolerance) >= max(v_high - tolerance, v_low - tolerance):
+        raise ValueError("Nudging intervals overlap: %f and %f +/- %f" % (v_low, v_high, tolerance))
+    is_high = abs(a - v_high) <= tolerance
+    is_low = abs(a - v_low) <= tolerance
     fixed1 = np.where(is_high, v_high, a)
     return np.where(is_low, v_low, fixed1)
 
 
-def rle(a):
+def rle(a: np.ndarray) -> tuple:
+    """Perform run-length encoding
+
+    :param a: Array of arbitrary numbers, presumably with some repetition.
+    :return: Array of run lengths, and array of numbers corresponding to those runs.
+    """
     # https://newbedev.com/find-length-of-sequences-of-identical-values-in-a-numpy-array-run-length-encoding
     ia = np.asarray(a)
     n = len(ia)
