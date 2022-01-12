@@ -64,7 +64,7 @@ def rle(a):
 
 class WaveData:
     def __init__(self, wav_file: wave.Wave_read, start_sample=0, n_symbols_to_read=750, baud=50):
-        self.wav_file = wav_file  # fixme - may not need to be self.x once no re-read.
+        self.wav_file = wav_file
         self.baud = baud
 
         # Derived and calculated vars
@@ -90,6 +90,7 @@ class WaveData:
         pretty_hex_list = list(pretty_hex_string(self.wav_bytes.hex()))
         dot_list = list(ints2dots(self.int_list))
 
+        print("\n\n# WAV file information\n")
         print("Params:\n", self.wav_file.getparams())
         print()
         print("File duration (s) =", self.wav_file.getnframes() / self.sample_rate)
@@ -102,14 +103,14 @@ class WaveData:
         print()
         print(''.join(pretty_hex_list[:n_bytes_to_plot * char_per_byte]))  # pretty hex list
         print()
-        print(self.int_list[:n_bytes_to_plot // self.bytes_per_sample])  # int list
+        print(self.int_list[:n_samples_to_plot])  # int list
         print()
-        print('\n'.join(dot_list[:n_bytes_to_plot // self.bytes_per_sample]))  # dot list
+        print('\n'.join(dot_list[:n_samples_to_plot]))  # dot list
 
 
 class Fourier:
     def __init__(self, wave_data: WaveData, seg_per_symbol=3):
-        self.sample_rate = wave_data.sample_rate  # fixme - does it need to be attibute?
+        self.sample_rate = wave_data.sample_rate  # fixme - does it need to be attribute?
         self.n_symbols_actually_read = wave_data.n_symbols_actually_read
         samples_per_symbol = self.sample_rate / wave_data.baud
         self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=self.sample_rate,
@@ -125,8 +126,8 @@ class Fourier:
         self.max_freq_indices = self.Zxx.argmax(0)
 
     def print_summary(self):
-        print("\n\n# Fourier decoding of FSK\n")
-        print("Zxx (FFT result) shape, frequencies X time points:", self.Zxx.shape)
+        print("\n\n# Fourier analysis of FSK\n")
+        print("Zxx (FFT result) shape, frequencies * time points:", self.Zxx.shape)
         print("FFT frequencies in pass band:", self.f)
         print("\nFrequency bin values over time:")
         print(self.max_freq_indices)
@@ -148,6 +149,9 @@ class Bitstream:
         Often input in fourier.max_freq_indices is like this:
         array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
         """
+        # fixme - make an 8N1 and 5N1 decoder on B.stream
+        # fixme - make guesses about B.stream width
+
         #  elements (segments) per symbol is a critical param.
         #  In theory, could try to auto-set from histogram(rl).
         #  Now we auto-set by knowing N symbols read.
