@@ -129,7 +129,7 @@ class Bitstream:
         assert (self.high - self.low) > 1
         rl, values = rle(square_up(self.max_freq_indices, self.high, self.low))
         npi = np.vectorize(int)
-        rounded = npi(np.around(rl / elements_per_symbol))  # shortens all run lengths
+        rounded = npi(np.around(rl / self.calculated_seg_per_symbol))  # shortens all run lengths
         self.stream = run_length_to_bitstream(rounded, values, self.high, self.low)
 
     def print_summary(self):
@@ -138,4 +138,5 @@ class Bitstream:
               (len(self.max_freq_indices), self.n_symbols_actually_read, self.calculated_seg_per_symbol))
         print("Inferred %i is high and %i is low (+/- 1)." % (self.high, self.low))
         print(self.stream)
+        print("%i bits" % len(self.stream))
         print()
