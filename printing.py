@@ -63,26 +63,3 @@ def ints2dots(ints):
     for x in ints:
         n_spaces = int(x / max_int * max_spaces)
         yield '.' * n_spaces + 'X'
-
-
-def print_bitstream_info():
-    pass
-
-
-def try_bitstream_shapes(bitstream, min_columns, max_columns):
-    # fixme - could be good to pass iterable of cols rather than min/max.
-    for cols in range(min_columns, max_columns):
-        # 5N1 = 7
-        # 8N1 = 10
-        if cols == 7:
-            print("5N1")
-        if cols == 10:
-            print("8N1")
-        n = len(bitstream)
-        n_padding = cols - (n % cols)
-        padding = [0] * n_padding
-        bitstream_padded = np.append(bitstream, padding)
-        # fixme - maybe do without "import numpy" if we do bitstream.append not np.append
-        rows = len(bitstream_padded) // cols
-        print(np.reshape(bitstream_padded, (rows, cols)))
-        print()

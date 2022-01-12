@@ -1,7 +1,7 @@
 import sys
 import wave
 from wave_helpers import file_to_int_list, Fourier, Bitstream
-from printing import print_wav_file_basics, try_bitstream_shapes
+from printing import print_wav_file_basics
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 print_wav_file_basics(wav_file)
@@ -24,4 +24,4 @@ F.save_plot('stft.png')
 # Translate FFT data to FSK bitstream
 B = Bitstream(F, n_symbols_actually_read)
 B.print_summary()
-try_bitstream_shapes(B.stream, 5, 12)
+B.print_shapes(5, 12)
