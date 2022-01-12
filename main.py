@@ -2,10 +2,9 @@ import sys
 import wave
 from wave_helpers import Fourier, Bitstream, WaveData
 
-wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
-
-W = WaveData(wav_file)
-W.print_wav_file_basics(n_frames_to_plot=15, baud=50)
+with wave.open(sys.argv[1], 'r') as wav_file:
+    W = WaveData(wav_file)
+    W.print_wav_file_basics(n_frames_to_plot=15, baud=50)
 
 # Short time Fourier transform
 F = Fourier(W, baud=50, seg_per_symbol=3)
