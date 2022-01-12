@@ -110,13 +110,15 @@ class Fourier:
 
 
 class Bitstream:
-    def __init__(self, fourier, n_symbols_actually_read, elements_per_symbol=3):
+    def __init__(self, fourier, n_symbols_actually_read):
         """Take np.array and output bitstream.
         Often input is like this:
         array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
         """
-        # fixme - elements_per_symbol is a critical param.
+        #  elements (segments) per symbol is a critical param.
         #  In theory, could try to auto-set from histogram(rl).
+        #  Now we auto-set by knowing N symbols read.
+        #  Could also pass this in from knowledge of FFT setup (but it was 2x as much, overlap?).
         self.n_symbols_actually_read = n_symbols_actually_read
         self.max_freq_indices = fourier.max_freq_indices  # need to save it for print later.
         self.calculated_seg_per_symbol = len(self.max_freq_indices) / n_symbols_actually_read
