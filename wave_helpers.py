@@ -81,18 +81,22 @@ class Fourier:
         samples_per_symbol = sample_rate / baud
         self.f, self.t, self.Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(
             samples_per_symbol / seg_per_symbol))
-        # Zxx first axis is freq, second is times
+        # Zxx's first axis is freq, second is times
+        self.max_freq_indices = self.Zxx.argmax(0)  # list of which freq band is most intense, per time
         # fixme - it is possible I don't understand the "nperseg" parameter.
 
     def apply_passband(self, lo_freq=400, hi_freq=2000):
         selected_indices = ((lo_freq < self.f) * (self.f < hi_freq))
         self.f = self.f[selected_indices]
         self.Zxx = np.abs(self.Zxx[selected_indices])
+        self.max_freq_indices = self.Zxx.argmax(0)
 
     def print_summary(self):
         print("\n\n# Fourier decoding of FSK\n")
         print("Zxx (FFT result) shape, frequencies X time points:", self.Zxx.shape)
         print("FFT frequencies in pass band:", self.f)
+        print("\nFrequency bin values over time:")
+        print(self.max_freq_indices)
 
     def save_plot(self, filename):
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html

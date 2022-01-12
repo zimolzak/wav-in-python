@@ -13,11 +13,8 @@ int_list, n_symbols_actually_read = file_to_int_list(wav_file, start_sample=1, n
 # Short time Fourier transform
 F = Fourier(int_list, sample_rate, baud=50, seg_per_symbol=3)
 F.apply_passband(400, 2000)
-max_freq_indices = F.Zxx.argmax(0)  # list of which freq band is most intense, per time
 F.print_summary()
 F.save_plot('stft.png')
-print("\nFrequency bin values over time:")
-print(max_freq_indices)
 
 # shift of 850 Hz. Mine by inspection is about 581 Hz and 1431 Hz
 # one symbol is about 450 - 470 samples by inspection
@@ -25,6 +22,6 @@ print(max_freq_indices)
 # 11.62 cycles in a low freq symbol, 28.62 in high freq.
 
 # Translate FFT data to FSK bitstream
-B = Bitstream(max_freq_indices, n_symbols_actually_read, elements_per_symbol=3)
+B = Bitstream(F.max_freq_indices, n_symbols_actually_read, elements_per_symbol=3)
 B.print_summary()
 try_bitstream_shapes(B.stream, 5, 12)
