@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import signal
+import matplotlib.pyplot as plt
 
 
 def bytes2int_list(byte_list):
@@ -100,12 +101,25 @@ class Fourier:
         samples_per_symbol = sample_rate / baud
         self.f, self.t, self.Zxx = signal.stft(int_list, fs=sample_rate, nperseg=int(
             samples_per_symbol / seg_per_symbol))
+        # Zxx first axis is freq, second is times
+        # fixme - it is possible I don't understand the "nperseg" parameter.
 
-    def apply_passband(self, lo_freq, hi_freq):
-        pass
+    def apply_passband(self, lo_freq=400, hi_freq=2000):
+        selected_indices = ((lo_freq < self.f) * (self.f < hi_freq))
+        self.f = self.f[selected_indices]
+        self.Zxx = np.abs(self.Zxx[selected_indices])
 
     def print_summary(self):
-        pass
+        print("\n\n# Fourier decoding of FSK\n")
+        print("Zxx (FFT result) shape, frequencies X time points:", self.Zxx.shape)
+        print("FFT frequencies in pass band:", self.f)
 
     def save_plot(self, filename):
-        pass
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
+        z_max = np.max(self.Zxx)  # global max just used for plot scale
+        plt.pcolormesh(self.t, self.f, self.Zxx, vmin=0, vmax=z_max, shading='gouraud')
+        plt.title('STFT Magnitude')
+        plt.ylabel('Frequency [Hz]')
+        plt.xlabel('Time [sec]')
+        plt.savefig(filename)
+        # plt.show()

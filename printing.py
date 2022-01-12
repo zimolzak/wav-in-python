@@ -1,6 +1,5 @@
 from wave_helpers import bytes2int_list
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def print_wav_file_basics(wav_file, n_frames_to_plot=15, baud=50):
@@ -82,14 +81,3 @@ def try_bitstream_shapes(bitstream, min_columns, max_columns):
         rows = len(bitstream_padded) // cols
         print(np.reshape(bitstream_padded, (rows, cols)))
         print()
-
-
-def plot_fourier_data(f, t, zxx, filename):
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
-    z_max = np.max(zxx)  # global max just used for plot scale
-    plt.pcolormesh(t, f, zxx, vmin=0, vmax=z_max, shading='gouraud')
-    plt.title('STFT Magnitude')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.savefig(filename)
-    #  plt.show()
