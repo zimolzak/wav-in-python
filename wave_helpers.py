@@ -287,7 +287,7 @@ class Bitstream:
             print()
 
 
-def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'stft.png') -> None:
+def whole_pipeline(infile: str = 'sample-data.wav', outfile: str = 'plot_default.png') -> None:
     """Chain together WAV reading, Fourier analysis, and Bitstream detection. Hard code reasonable defaults. Useful
     for main.py or for testing.
 
