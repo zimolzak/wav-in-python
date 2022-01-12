@@ -5,20 +5,13 @@ from printing import print_wav_file_basics, try_bitstream_shapes
 
 wav_file = wave.open(sys.argv[1], 'r')  # fixme catch exception, "with"
 print_wav_file_basics(wav_file)
-
-# Free parameters
-start_sample = 1  # 3080 is start of good mark/space in sample-data.wav
-baud = 50  # symbol / sec
-n_symbols_to_read = baud * 15  # 15 sec
-seg_per_symbol = 3  # for STFT / FFT
-
-# can't do without these, but move into other funcs later
 sample_rate = wav_file.getframerate()
 
+# Read data out of WAV file.
 int_list, n_symbols_actually_read = file_to_int_list(wav_file, start_sample=1, n_symbols_to_read=750, baud=50)
 
 # Short time Fourier transform
-F = Fourier(int_list, sample_rate, baud=50)
+F = Fourier(int_list, sample_rate, baud=50, seg_per_symbol=3)
 F.apply_passband(400, 2000)
 max_freq_indices = F.Zxx.argmax(0)  # list of which freq band is most intense, per time
 F.print_summary()
@@ -31,11 +24,7 @@ print(max_freq_indices)
 # calculated at 441 samples/symbol
 # 11.62 cycles in a low freq symbol, 28.62 in high freq.
 
-# bitstream ########
-# bitstream, hi, lo = freqs2bits(max_freq_indices, calculated_seg_per_symbol)  # important
-
+# Translate FFT data to FSK bitstream
 B = Bitstream(max_freq_indices, n_symbols_actually_read, elements_per_symbol=3)
-
 B.print_summary()
-
 try_bitstream_shapes(B.stream, 5, 12)
