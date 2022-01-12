@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import wave  # so we can refer to its classes in type hint annotations
 from scipy import signal
 from typing import Generator
+import collections
 
 from printing import pretty_hex_string, ints2dots
 
@@ -95,7 +96,21 @@ def rle(a: np.ndarray) -> tuple:
 
 
 class WaveData:
-    def __init__(self, wav_file: wave.Wave_read, start_sample=0, n_symbols_to_read=750, baud=50):
+    """Wrap a Wave_read object with awareness of baud and its sample values."""
+
+    def __init__(self, wav_file: wave.Wave_read,
+                 start_sample: int = 0, n_symbols_to_read: int = 750, baud: int = 50) -> None:
+        """Decode a portion of an open WAV file to bytes and integer samples.
+
+        Example:
+        W = WaveData(fh)
+        W.int_list -> [32547, 32606, 32964, 33108, ...]
+
+        :param wav_file: Object opened by wave.open() but not yet read
+        :param start_sample: Where in the file to start reading
+        :param n_symbols_to_read: How many FSK symbols to read
+        :param baud: Rate of FSK symbols per second
+        """
         self.wav_file = wav_file
         self.baud = baud
 
@@ -114,10 +129,10 @@ class WaveData:
         self.n_symbols_actually_read = self.n_samples_actually_read / self.sample_rate * baud
         self.int_list = list(bytes2int_list(self.wav_bytes))
 
-    def print_summary(self, n_samples_to_plot=15):
-        """Reasonable metadata about WAV file, and text description of some of its data.
+    def print_summary(self, n_samples_to_plot: int = 15) -> None:
+        """Show reasonable data and metadata from a WAV file, in plain text.
 
-        :param n_samples_to_plot: How many WAV samples to display (as numbers, text graph)
+        :param n_samples_to_plot: How many WAV samples to display (as numbers and a text graph)
         """
         char_per_byte = 2  # That means hex chars. 1 B = 2 hex digits '01' or '0F' etc.
         n_bytes_to_plot = n_samples_to_plot * self.bytes_per_sample
@@ -145,29 +160,51 @@ class WaveData:
 
 
 class Fourier:
-    def __init__(self, wave_data: WaveData, seg_per_symbol=3):
+    def __init__(self, wave_data: WaveData, seg_per_symbol: int = 3) -> None:
+        """Represent results of short-time Fourier transform applied to WAV audio, including spectrogram of max
+        intensity frequency over time. Converts high-resolution sample time series to medium-resolution frequency
+        time-series.
+
+        Example:
+        F = Fourier(W)
+        F.max_freq_indices -> [1 1 7 6 7 7 7 7 1 1]
+        ...where "1" means 600 Hz, and "7" means 1500 Hz.
+
+        :param wave_data: Object containing list of WAV numeric samples to be processed.
+        :param seg_per_symbol: How many FT segments are calculated for each FSK symbol.
+        """
         self.n_symbols_actually_read = wave_data.n_symbols_actually_read
         samples_per_symbol = wave_data.sample_rate / wave_data.baud
         self.f, self.t, self.Zxx = signal.stft(wave_data.int_list, fs=wave_data.sample_rate,
-                                               nperseg=int(samples_per_symbol / seg_per_symbol))
+                                               nperseg=int(samples_per_symbol / seg_per_symbol))  # important
         # Zxx's first axis is freq, second is times
-        self.max_freq_indices = self.Zxx.argmax(0)  # Main output: list of which freq band is most intense, per time
+        self.max_freq_indices = self.Zxx.argmax(0)  # Main output: vector of which freq band is most intense, per time
         # fixme - it is possible I don't understand the "nperseg" parameter.
 
-    def apply_passband(self, lo_freq=400, hi_freq=2000):
+    def apply_passband(self, lo_freq: float = 400, hi_freq: float = 2000) -> None:
+        """Retain only certain rows (frequencies) in the FT and other result matrices/vectors.
+
+        :param lo_freq: Lower cutoff frequency (below this will be blocked)
+        :param hi_freq: Higher cutoff frequency
+        """
         selected_indices = ((lo_freq < self.f) * (self.f < hi_freq))
         self.f = self.f[selected_indices]
         self.Zxx = np.abs(self.Zxx[selected_indices])
         self.max_freq_indices = self.Zxx.argmax(0)
 
     def print_summary(self):
+        """Show data/metadata on STFT results."""
         print("\n\n# Fourier analysis of FSK\n")
         print("Zxx (FFT result) shape, frequencies * time points:", self.Zxx.shape)
         print("FFT frequencies in pass band:", self.f)
         print("\nFrequency bin values over time:")
         print(self.max_freq_indices)
 
-    def save_plot(self, filename):
+    def save_plot(self, filename: str) -> None:
+        """Render a spectrogram of the complete STFT of WAV data.
+
+        :param filename: Name of the image file where the plot will be saved
+        """
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
         z_max = np.max(self.Zxx)  # global max just used for plot scale
         plt.pcolormesh(self.t, self.f, self.Zxx, vmin=0, vmax=z_max, shading='gouraud')
@@ -179,31 +216,41 @@ class Fourier:
 
 
 class Bitstream:
-    def __init__(self, fourier):
-        """Take Fourier object and output bitstream.
+    def __init__(self, fourier: Fourier) -> None:
+        """Convert the medium-resolution frequency time series to low resolution bitstream (FSK symbol time series).
+
         Often input in fourier.max_freq_indices is like this:
         array([0, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1, 7, 7, 7, 7, 7, 7, 6, 1, 1, 1, 1, 1])
+        B = Bitstream(F)
+        B.stream -> [1, 0, 1, 0]
+
+        :param fourier: Object containing array of max intensity frequency over time.
         """
         #  elements (segments) per symbol is a critical param.
         #  In theory, could try to auto-set from histogram(rl).
         #  Now we auto-set by knowing N symbols read.
         #  Could also pass this in from knowledge of FFT setup (but it was 2x as much, overlap?).
         self.n_symbols_actually_read = fourier.n_symbols_actually_read
-        self.max_freq_indices = fourier.max_freq_indices  # need to save it for print later.
+        self.max_freq_indices = fourier.max_freq_indices  # Need to save these to print later.
         self.calculated_seg_per_symbol = len(self.max_freq_indices) / self.n_symbols_actually_read
+
+        # Infer that the 2 most prevalent frequencies are mark and space
         h = np.histogram(self.max_freq_indices, bins=np.arange(15))  # Integer bins. Can ignore h[1].
         least_to_most = h[0].argsort()
         common_val_1 = least_to_most[-1]
         common_val_2 = least_to_most[-2]
         self.low = min(common_val_1, common_val_2)
         self.high = max(common_val_1, common_val_2)
-        assert (self.high - self.low) > 1
+        assert (self.high - self.low) > 1  # fixme - raise exception
+
+        # Compress multiple FT segments into 1 symbol, and map mark/space frequencies to 0/1.
         rl, values = rle(square_up(self.max_freq_indices, self.high, self.low))
         npi = np.vectorize(int)
-        rounded = npi(np.around(rl / self.calculated_seg_per_symbol))  # shortens all run lengths
+        rounded = npi(np.around(rl / self.calculated_seg_per_symbol))  # important - shortens all run lengths
         self.stream = run_length_to_bitstream(rounded, values, self.high, self.low)
 
     def print_summary(self):
+        """Show reasonable data/metadata about the bitstream."""
         print("\n\n# Bitstream\n")
         print("Using %i segments / %i symbols = %f seg/sym" %
               (len(self.max_freq_indices), self.n_symbols_actually_read, self.calculated_seg_per_symbol))
@@ -212,20 +259,24 @@ class Bitstream:
         print("%i bits" % len(self.stream))
         print()
 
-    def print_shapes(self, column_widths):
+    def print_shapes(self, array_widths: collections.abc.Iterable) -> None:
+        """Print bitstream reshaped in multiple ways. To look for start/stop bits.
+
+        :param array_widths: list, range, or other iterable of matrix widths you want to try
+        """
         # fixme - make an 8N1 and 5N1 decoder on B.stream
         # fixme - make guesses about B.stream width
-        for cols in column_widths:
+        for n_columns in array_widths:
             # 5N1 = 7
             # 8N1 = 10
-            if cols == 7:
+            if n_columns == 7:
                 print("5N1")
-            if cols == 10:
+            if n_columns == 10:
                 print("8N1")
             n = len(self.stream)
-            n_padding = cols - (n % cols)
+            n_padding = n_columns - (n % n_columns)
             padding = [0] * n_padding
             bitstream_padded = np.append(self.stream, padding)
-            rows = len(bitstream_padded) // cols
-            print(np.reshape(bitstream_padded, (rows, cols)))
+            n_rows = len(bitstream_padded) // n_columns
+            print(np.reshape(bitstream_padded, (n_rows, n_columns)))
             print()
